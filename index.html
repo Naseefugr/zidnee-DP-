@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zidnee Class Room - DP Frame Maker</title>
+    <style>
+        :root {
+            --primary-color: #126349;
+            --secondary-color: #0d4633;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f4f3;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            margin-bottom: 5px;
+            text-align: center;
+        }
+
+        p.subtitle {
+            color: #666;
+            margin-top: 0;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+            max-width: 900px;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .form-section {
+            flex: 1;
+            min-width: 280px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .canvas-section {
+            flex: 1;
+            min-width: 280px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        label {
+            font-weight: 600;
+            font-size: 14px;
+            color: #444;
+        }
+
+        input[type="text"], input[type="file"] {
+            padding: 10px 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--primary-color);
+        }
+
+        .btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            text-align: center;
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            background-color: var(--secondary-color);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        canvas {
+            width: 100%;
+            max-width: 400px;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            background: #e1e1e1;
+        }
+
+        .note {
+            font-size: 12px;
+            color: #777;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Zidnee DP Frame Maker</h1>
+    <p class="subtitle">Generate your customized class room display picture instantly</p>
+
+    <div class="container">
+        <!-- Input Form Section -->
+        <div class="form-section">
+            <div class="input-group">
+                <label for="imageUpload">Upload Your Photo</label>
+                <input type="file" id="imageUpload" accept="image/*">
+            </div>
+
+            <div class="input-group">
+                <label for="inputName">Full Name</label>
+                <input type="text" id="inputName" placeholder="e.g. Thabhseer CP" value="Thabhseer CP">
+            </div>
+
+            <div class="input-group">
+                <label for="inputID">ID (with or without #)</label>
+                <input type="text" id="inputID" placeholder="e.g. ZID236" value="ZID236">
+            </div>
+
+            <div class="input-group">
+                <label for="inputLevel">Level Name</label>
+                <input type="text" id="inputLevel" placeholder="e.g. SEED" value="SEED">
+            </div>
+
+            <button class="btn" id="downloadBtn">Download DP</button>
+            <p class="note">Make sure "model.jpg" is in the same folder as this HTML file.</p>
+        </div>
+
+        <!-- Canvas Output Section -->
+        <div class="canvas-section">
+            <canvas id="dpCanvas" width="1080" height="1080"></canvas>
+        </div>
+    </div>
+
+    <script>
+        const imageUpload = document.getElementById('imageUpload');
+        const inputName = document.getElementById('inputName');
+        const inputID = document.getElementById('inputID');
+        const inputLevel = document.getElementById('inputLevel');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const canvas = document.getElementById('dpCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Load Frame Template Model Image
+        const frameImage = new Image();
+        frameImage.src = 'model.jpg'; 
+
+        let userPhoto = null;
+
+        const photoBox = {
+            x: 410,
+            y: 195,
+            width: 442,
+            height: 442,
+            rotation: 0.05 
+        };
+
+        // Redraw canvas whenever frame image loads or errors out
+        frameImage.onload = () => { drawCanvas(); };
+        frameImage.onerror = () => { drawCanvas(); };
+
+        // Listen to input changes for real-time updating
+        [inputName, inputID, inputLevel].forEach(input => {
+            input.addEventListener('input', drawCanvas);
+        });
+
+        imageUpload.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const img = new Image();
+                    img.onload = function() {
+                        userPhoto = img;
+                        drawCanvas();
+                    }
+                    img.src = event.target.result;
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // EXACT FUNCTION PRESERVED AS REQUESTED
+        function drawCanvas() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 1. Draw User Photo behind the frame inside the green box slot
+            if (userPhoto) {
+                ctx.save();
+                // Move to center of target area to rotate relative to frame angle
+                ctx.translate(photoBox.x + photoBox.width / 2, photoBox.y + photoBox.height / 2);
+                ctx.rotate(photoBox.rotation);
+
+                // Cover-fit calculation to center and fill image completely
+                let scale = Math.max(photoBox.width / userPhoto.width, photoBox.height / userPhoto.height);
+                let w = userPhoto.width * scale;
+                let h = userPhoto.height * scale;
+                
+                ctx.drawImage(userPhoto, -w / 2, -h / 2, w, h);
+                ctx.restore();
+            } else {
+                // Placeholder green box if no image uploaded yet
+                ctx.save();
+                ctx.translate(photoBox.x + photoBox.width / 2, photoBox.y + photoBox.height / 2);
+                ctx.rotate(photoBox.rotation);
+                ctx.fillStyle = '#1b7d5e';
+                ctx.fillRect(-photoBox.width / 2, -photoBox.height / 2, photoBox.width, photoBox.height);
+                ctx.restore();
+            }
+
+            // 2. Draw Frame Overlay on top
+            if (frameImage.complete && frameImage.naturalHeight !== 0) {
+                ctx.drawImage(frameImage, 0, 0, canvas.width, canvas.height);
+            }
+
+            // 3. Draw Dynamic Text Elements
+            ctx.save();
+            ctx.translate(500, 770); // Adjusted base anchor
+            ctx.rotate(6.2);
+
+            // ID Line (Blue Color with Hash Symbol)
+            ctx.font = 'bold 28px sans-serif';
+            ctx.fillStyle = '#0044cc'; 
+            let rawID = inputID.value.trim();
+            let formattedID = rawID.startsWith('#') ? rawID : '#' + rawID;
+            ctx.fillText(formattedID, 0, 0);
+
+            // Name Line (Reduced gap from ID: changed from 38 to 30)
+            ctx.font = 'bold 34px sans-serif';
+            ctx.fillStyle = '#111111';
+            let nameVal = inputName.value.trim();
+            ctx.fillText(nameVal, 0, 35);
+
+            // Level Badge Shape & Text (Reduced gap from Name: changed from 54 to 46)
+            let levelVal = inputLevel.value.trim().toUpperCase() + ' - LEVEL';
+            ctx.font = 'bold 18px sans-serif';
+            
+            let textMetrics = ctx.measureText(levelVal);
+            let badgePaddingX = 12;
+            let badgeWidth = textMetrics.width + (badgePaddingX * 2);
+            let badgeHeight = 30;
+            let badgeX = 0;
+            let badgeY = 46; // Pulled closer to the name
+
+            // Draw dark badge background container box
+            ctx.fillStyle = '#222222';
+            ctx.beginPath();
+            if (ctx.roundRect) {
+                ctx.roundRect(badgeX, badgeY, badgeWidth, badgeHeight, 4);
+            } else {
+                ctx.rect(badgeX, badgeY, badgeWidth, badgeHeight); // Fallback for older browsers
+            }
+            ctx.fill();
+
+            // Draw Level Text
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(levelVal, badgeX + badgePaddingX, badgeY + 20);
+
+            ctx.restore();
+        }
+
+        // Fixed Download Action handler
+        downloadBtn.addEventListener('click', function() {
+            const dataURL = canvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.download = 'zidnee-class-room-dp.png';
+            link.href = dataURL;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+
+        // Trigger initial draw
+        drawCanvas();
+    </script>
+</body>
+</html>
