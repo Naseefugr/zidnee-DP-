@@ -156,7 +156,7 @@
             </div>
 
             <button class="btn" id="downloadBtn">Download DP</button>
-            <p class="note">Make sure "model.jpg" is in the same folder as this HTML file.</p>
+            <p class="note">Make sure model.jpg is in the same folder.</p>
         </div>
 
         <!-- Canvas Output Section -->
@@ -174,25 +174,25 @@
         const canvas = document.getElementById('dpCanvas');
         const ctx = canvas.getContext('2d');
 
-        // Load Frame Template Model Image
         const frameImage = new Image();
         frameImage.src = 'model.jpg'; 
 
         let userPhoto = null;
 
-        const photoBox = {
-            x: 410,
-            y: 195,
+        // Exact un-changed photo box specifications with your values
+       const photoBox = {
+
+            x: 435,
+            y: 235,
             width: 442,
             height: 442,
-            rotation: 0.05 
+            rotation: 6.18
+
         };
 
-        // Redraw canvas whenever frame image loads or errors out
         frameImage.onload = () => { drawCanvas(); };
         frameImage.onerror = () => { drawCanvas(); };
 
-        // Listen to input changes for real-time updating
         [inputName, inputID, inputLevel].forEach(input => {
             input.addEventListener('input', drawCanvas);
         });
@@ -213,59 +213,58 @@
             }
         });
 
-        // EXACT FUNCTION PRESERVED AS REQUESTED
         function drawCanvas() {
-            // Clear canvas
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // 1. Draw User Photo behind the frame inside the green box slot
-            if (userPhoto) {
-                ctx.save();
-                // Move to center of target area to rotate relative to frame angle
-                ctx.translate(photoBox.x + photoBox.width / 2, photoBox.y + photoBox.height / 2);
-                ctx.rotate(photoBox.rotation);
-
-                // Cover-fit calculation to center and fill image completely
-                let scale = Math.max(photoBox.width / userPhoto.width, photoBox.height / userPhoto.height);
-                let w = userPhoto.width * scale;
-                let h = userPhoto.height * scale;
-                
-                ctx.drawImage(userPhoto, -w / 2, -h / 2, w, h);
-                ctx.restore();
-            } else {
-                // Placeholder green box if no image uploaded yet
-                ctx.save();
-                ctx.translate(photoBox.x + photoBox.width / 2, photoBox.y + photoBox.height / 2);
-                ctx.rotate(photoBox.rotation);
-                ctx.fillStyle = '#1b7d5e';
-                ctx.fillRect(-photoBox.width / 2, -photoBox.height / 2, photoBox.width, photoBox.height);
-                ctx.restore();
-            }
-
-            // 2. Draw Frame Overlay on top
+            // 1. Draw model.jpg FIRST as the background
             if (frameImage.complete && frameImage.naturalHeight !== 0) {
                 ctx.drawImage(frameImage, 0, 0, canvas.width, canvas.height);
             }
 
+            // 2. Draw and MASK (Clip) User Photo precisely inside the target rotated slot
+            ctx.save();
+            ctx.translate(photoBox.x, photoBox.y);
+            ctx.rotate(photoBox.rotation);
+
+            // Create clipping boundary matching the exact box rectangle dimensions
+            ctx.beginPath();
+            ctx.rect(0, 0, photoBox.width, photoBox.height);
+            ctx.clip();
+
+            if (userPhoto) {
+                let scale = Math.max(photoBox.width / userPhoto.width, photoBox.height / userPhoto.height);
+                let w = userPhoto.width * scale;
+                let h = userPhoto.height * scale;
+                let offsetX = (photoBox.width - w) / 2;
+                let offsetY = (photoBox.height - h) / 2;
+                
+                ctx.drawImage(userPhoto, offsetX, offsetY, w, h);
+            } else {
+                // Placeholder background color if no image is uploaded
+                ctx.fillStyle = '#1b7d5e';
+                ctx.fillRect(0, 0, photoBox.width, photoBox.height);
+            }
+            ctx.restore();
+
             // 3. Draw Dynamic Text Elements
             ctx.save();
-            ctx.translate(500, 770); // Adjusted base anchor
+            ctx.translate(500, 770); 
             ctx.rotate(6.2);
 
-            // ID Line (Blue Color with Hash Symbol)
+            // ID Line
             ctx.font = 'bold 28px sans-serif';
             ctx.fillStyle = '#0044cc'; 
             let rawID = inputID.value.trim();
             let formattedID = rawID.startsWith('#') ? rawID : '#' + rawID;
             ctx.fillText(formattedID, 0, 0);
 
-            // Name Line (Reduced gap from ID: changed from 38 to 30)
+            // Name Line 
             ctx.font = 'bold 34px sans-serif';
             ctx.fillStyle = '#111111';
             let nameVal = inputName.value.trim();
             ctx.fillText(nameVal, 0, 35);
 
-            // Level Badge Shape & Text (Reduced gap from Name: changed from 54 to 46)
+            // Level Badge Shape & Text
             let levelVal = inputLevel.value.trim().toUpperCase() + ' - LEVEL';
             ctx.font = 'bold 18px sans-serif';
             
@@ -274,26 +273,23 @@
             let badgeWidth = textMetrics.width + (badgePaddingX * 2);
             let badgeHeight = 30;
             let badgeX = 0;
-            let badgeY = 46; // Pulled closer to the name
+            let badgeY = 46; 
 
-            // Draw dark badge background container box
             ctx.fillStyle = '#222222';
             ctx.beginPath();
             if (ctx.roundRect) {
                 ctx.roundRect(badgeX, badgeY, badgeWidth, badgeHeight, 4);
             } else {
-                ctx.rect(badgeX, badgeY, badgeWidth, badgeHeight); // Fallback for older browsers
+                ctx.rect(badgeX, badgeY, badgeWidth, badgeHeight);
             }
             ctx.fill();
 
-            // Draw Level Text
             ctx.fillStyle = '#ffffff';
             ctx.fillText(levelVal, badgeX + badgePaddingX, badgeY + 20);
 
             ctx.restore();
         }
 
-        // Fixed Download Action handler
         downloadBtn.addEventListener('click', function() {
             const dataURL = canvas.toDataURL('image/png');
             const link = document.createElement('a');
@@ -304,7 +300,6 @@
             document.body.removeChild(link);
         });
 
-        // Trigger initial draw
         drawCanvas();
     </script>
 </body>
