@@ -309,7 +309,7 @@
             let formattedID = rawID.startsWith('#') ? rawID : '#' + rawID;
             ctx.fillText(formattedID, 0, 0);
 
-            ctx.font = ` ${nameFontSize}px sans-serif`;
+            ctx.font = `bold ${nameFontSize}px sans-serif`;
             ctx.fillStyle = '#111111';
             let nameVal = inputName.value.trim();
             ctx.fillText(nameVal, 0, 30);
