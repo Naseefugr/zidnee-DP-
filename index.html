@@ -15,7 +15,7 @@
             background-color: #f0f4f3;
             color: #333;
             margin: 0;
-            padding: 20px;
+            padding: 15px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -25,26 +25,29 @@
             color: var(--primary-color);
             margin-bottom: 5px;
             text-align: center;
+            font-size: 1.8rem;
         }
 
         p.subtitle {
             color: #666;
             margin-top: 0;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             text-align: center;
+            font-size: 0.95rem;
         }
 
         .container {
             display: flex;
             flex-wrap: wrap;
-            gap: 30px;
+            gap: 20px;
             background: #ffffff;
-            padding: 30px;
+            padding: 20px;
             border-radius: 12px;
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
             max-width: 900px;
             width: 100%;
             justify-content: center;
+            box-sizing: border-box;
         }
 
         .form-section {
@@ -55,6 +58,7 @@
             gap: 15px;
         }
 
+        /* Mobile-Friendly Sticky Preview Section */
         .canvas-section {
             flex: 1;
             min-width: 280px;
@@ -62,6 +66,24 @@
             flex-direction: column;
             align-items: center;
             gap: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column-reverse; /* Puts canvas/preview on top for mobile convenience */
+                padding: 15px;
+            }
+            .canvas-section {
+                position: sticky;
+                top: 10px;
+                z-index: 100;
+                background: #ffffff;
+                padding-bottom: 10px;
+                border-bottom: 2px solid #f0f4f3;
+            }
+            canvas {
+                max-width: 280px !important; /* Smaller footprint on mobile screen */
+            }
         }
 
         .input-group {
@@ -76,16 +98,19 @@
             color: #444;
         }
 
-        input[type="text"], input[type="file"] {
+        input[type="text"], input[type="file"], input[type="range"], select {
             padding: 10px 12px;
             border: 1px solid #ccc;
             border-radius: 6px;
             font-size: 14px;
             outline: none;
             transition: border-color 0.2s;
+            background-color: #fff;
+            width: 100%;
+            box-sizing: border-box;
         }
 
-        input[type="text"]:focus {
+        input[type="text"]:focus, select:focus {
             border-color: var(--primary-color);
         }
 
@@ -136,23 +161,44 @@
         <!-- Input Form Section -->
         <div class="form-section">
             <div class="input-group">
-                <label for="imageUpload">Upload Your Photo</label>
+                <label for="imageUpload">Upload Student Photo</label>
                 <input type="file" id="imageUpload" accept="image/*">
             </div>
 
             <div class="input-group">
-                <label for="inputName">Full Name</label>
-                <input type="text" id="inputName" placeholder="e.g. Thabhseer CP" value="Thabhseer CP">
+                <label for="zoomRange">Photo Zoom</label>
+                <input type="range" id="zoomRange" min="0.5" max="3" step="0.1" value="1">
             </div>
 
             <div class="input-group">
-                <label for="inputID">ID (with or without #)</label>
-                <input type="text" id="inputID" placeholder="e.g. ZID236" value="ZID236">
+                <label for="posXRange">Photo Position X (Left / Right)</label>
+                <input type="range" id="posXRange" min="-200" max="200" step="5" value="0">
+            </div>
+
+            <div class="input-group">
+                <label for="posYRange">Photo Position Y (Up / Down)</label>
+                <input type="range" id="posYRange" min="-200" max="200" step="5" value="0">
+            </div>
+
+            <div class="input-group">
+                <label for="inputName">Student Name</label>
+                <input type="text" id="inputName" placeholder="Enter Student Name" value="">
+            </div>
+
+            <div class="input-group">
+                <label for="inputID">Student Zidnee ID</label>
+                <input type="text" id="inputID" placeholder="Enter Student ZID" value="">
             </div>
 
             <div class="input-group">
                 <label for="inputLevel">Level Name</label>
-                <input type="text" id="inputLevel" placeholder="e.g. SEED" value="SEED">
+                <select id="inputLevel">
+                    <option value="Seed">Seed</option>
+                    <option value="Sprout">Sprout</option>
+                    <option value="Bud">Bud</option>
+                    <option value="Leaf">Leaf</option>
+                    <option value="Root">Root</option>
+                </select>
             </div>
 
             <button class="btn" id="downloadBtn">Download DP</button>
@@ -167,6 +213,9 @@
 
     <script>
         const imageUpload = document.getElementById('imageUpload');
+        const zoomRange = document.getElementById('zoomRange');
+        const posXRange = document.getElementById('posXRange');
+        const posYRange = document.getElementById('posYRange');
         const inputName = document.getElementById('inputName');
         const inputID = document.getElementById('inputID');
         const inputLevel = document.getElementById('inputLevel');
@@ -179,21 +228,18 @@
 
         let userPhoto = null;
 
-        // Exact un-changed photo box specifications with your values
-       const photoBox = {
-
+        const photoBox = {
             x: 435,
             y: 235,
             width: 442,
             height: 442,
             rotation: 6.18
-
         };
 
         frameImage.onload = () => { drawCanvas(); };
         frameImage.onerror = () => { drawCanvas(); };
 
-        [inputName, inputID, inputLevel].forEach(input => {
+        [inputName, inputID, inputLevel, zoomRange, posXRange, posYRange].forEach(input => {
             input.addEventListener('input', drawCanvas);
         });
 
@@ -205,6 +251,9 @@
                     const img = new Image();
                     img.onload = function() {
                         userPhoto = img;
+                        zoomRange.value = 1;
+                        posXRange.value = 0;
+                        posYRange.value = 0;
                         drawCanvas();
                     }
                     img.src = event.target.result;
@@ -216,64 +265,65 @@
         function drawCanvas() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // 1. Draw model.jpg FIRST as the background
             if (frameImage.complete && frameImage.naturalHeight !== 0) {
                 ctx.drawImage(frameImage, 0, 0, canvas.width, canvas.height);
             }
 
-            // 2. Draw and MASK (Clip) User Photo precisely inside the target rotated slot
             ctx.save();
             ctx.translate(photoBox.x, photoBox.y);
             ctx.rotate(photoBox.rotation);
 
-            // Create clipping boundary matching the exact box rectangle dimensions
             ctx.beginPath();
             ctx.rect(0, 0, photoBox.width, photoBox.height);
             ctx.clip();
 
             if (userPhoto) {
-                let scale = Math.max(photoBox.width / userPhoto.width, photoBox.height / userPhoto.height);
+                let baseScale = Math.max(photoBox.width / userPhoto.width, photoBox.height / userPhoto.height);
+                let userZoom = parseFloat(zoomRange.value);
+                let scale = baseScale * userZoom;
+
                 let w = userPhoto.width * scale;
                 let h = userPhoto.height * scale;
-                let offsetX = (photoBox.width - w) / 2;
-                let offsetY = (photoBox.height - h) / 2;
+                
+                let offsetX = (photoBox.width - w) / 2 + parseFloat(posXRange.value);
+                let offsetY = (photoBox.height - h) / 2 + parseFloat(posYRange.value);
                 
                 ctx.drawImage(userPhoto, offsetX, offsetY, w, h);
             } else {
-                // Placeholder background color if no image is uploaded
                 ctx.fillStyle = '#1b7d5e';
                 ctx.fillRect(0, 0, photoBox.width, photoBox.height);
             }
             ctx.restore();
 
-            // 3. Draw Dynamic Text Elements
             ctx.save();
             ctx.translate(500, 770); 
             ctx.rotate(6.2);
 
-            // ID Line
-            ctx.font = ' 23px sans-serif';
+            const idFontSize = 26;     
+            const nameFontSize = 32;   
+            const levelFontSize = 16;  
+
+            ctx.font = `bold ${idFontSize}px sans-serif`;
             ctx.fillStyle = '#0044cc'; 
             let rawID = inputID.value.trim();
             let formattedID = rawID.startsWith('#') ? rawID : '#' + rawID;
             ctx.fillText(formattedID, 0, 0);
 
-            // Name Line 
-            ctx.font = ' 30px sans-serif';
+            ctx.font = `bold ${nameFontSize}px sans-serif`;
             ctx.fillStyle = '#111111';
             let nameVal = inputName.value.trim();
-            ctx.fillText(nameVal, 0, 28);
+            ctx.fillText(nameVal, 0, 35);
 
-            // Level Badge Shape & Text
+            let badgeY = 46; 
+
             let levelVal = inputLevel.value.trim().toUpperCase() + ' - LEVEL';
-            ctx.font = 'bold 16px sans-serif';
+            ctx.font = `bold ${levelFontSize}px sans-serif`;
             
             let textMetrics = ctx.measureText(levelVal);
             let badgePaddingX = 12;
             let badgeWidth = textMetrics.width + (badgePaddingX * 2);
             let badgeHeight = 30;
             let badgeX = 0;
-            let badgeY = 35; 
 
             ctx.fillStyle = '#222222';
             ctx.beginPath();
