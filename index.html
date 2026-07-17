@@ -297,24 +297,24 @@
 
             ctx.save();
             ctx.translate(500, 770); 
-            ctx.rotate(6.2);
+            ctx.rotate(6.18);
 
-            const idFontSize = 26;     
-            const nameFontSize = 32;   
+            const idFontSize = 22;     
+            const nameFontSize = 30;   
             const levelFontSize = 16;  
 
-            ctx.font = `bold ${idFontSize}px sans-serif`;
+            ctx.font = ` ${idFontSize}px sans-serif`;
             ctx.fillStyle = '#0044cc'; 
             let rawID = inputID.value.trim();
             let formattedID = rawID.startsWith('#') ? rawID : '#' + rawID;
             ctx.fillText(formattedID, 0, 0);
 
-            ctx.font = `bold ${nameFontSize}px sans-serif`;
+            ctx.font = ` ${nameFontSize}px sans-serif`;
             ctx.fillStyle = '#111111';
             let nameVal = inputName.value.trim();
-            ctx.fillText(nameVal, 0, 35);
+            ctx.fillText(nameVal, 0, 30);
 
-            let badgeY = 46; 
+            let badgeY = 40; 
 
             let levelVal = inputLevel.value.trim().toUpperCase() + ' - LEVEL';
             ctx.font = `bold ${levelFontSize}px sans-serif`;
@@ -322,7 +322,7 @@
             let textMetrics = ctx.measureText(levelVal);
             let badgePaddingX = 12;
             let badgeWidth = textMetrics.width + (badgePaddingX * 2);
-            let badgeHeight = 30;
+            let badgeHeight = 28;
             let badgeX = 0;
 
             ctx.fillStyle = '#222222';
