@@ -58,7 +58,6 @@
             gap: 15px;
         }
 
-        /* Mobile-Friendly Sticky Preview Section */
         .canvas-section {
             flex: 1;
             min-width: 280px;
@@ -70,7 +69,7 @@
 
         @media (max-width: 768px) {
             .container {
-                flex-direction: column-reverse; /* Puts canvas/preview on top for mobile convenience */
+                flex-direction: column-reverse;
                 padding: 15px;
             }
             .canvas-section {
@@ -82,7 +81,7 @@
                 border-bottom: 2px solid #f0f4f3;
             }
             canvas {
-                max-width: 280px !important; /* Smaller footprint on mobile screen */
+                max-width: 280px !important;
             }
         }
 
@@ -181,6 +180,16 @@
             </div>
 
             <div class="input-group">
+                <label for="hueRange">Poster Hue Shift (Color)</label>
+                <input type="range" id="hueRange" min="0" max="360" step="1" value="0">
+            </div>
+
+            <div class="input-group">
+                <label for="satRange">Poster Saturation</label>
+                <input type="range" id="satRange" min="0" max="200" step="5" value="100">
+            </div>
+
+            <div class="input-group">
                 <label for="inputName">Student Name</label>
                 <input type="text" id="inputName" placeholder="Enter Student Name" value="">
             </div>
@@ -197,14 +206,7 @@
                     <option value="Sprout">Sprout</option>
                     <option value="Bud">Bud</option>
                     <option value="Leaf">Leaf</option>
-                    <option value="1st">1st</option>
-                    <option value="2nd">2nd</option>
-                    <option value="3rd">3rd</option>
-                    <option value="4th">4th</option>
-                    <option value="5th">5th</option>
-                    <option value="6th">6th</option>
-                    <option value="7th">7th</option>
-                    <option value="7+">7+</option>
+                    <option value="Root">Root</option>
                 </select>
             </div>
 
@@ -223,6 +225,8 @@
         const zoomRange = document.getElementById('zoomRange');
         const posXRange = document.getElementById('posXRange');
         const posYRange = document.getElementById('posYRange');
+        const hueRange = document.getElementById('hueRange');
+        const satRange = document.getElementById('satRange');
         const inputName = document.getElementById('inputName');
         const inputID = document.getElementById('inputID');
         const inputLevel = document.getElementById('inputLevel');
@@ -246,7 +250,7 @@
         frameImage.onload = () => { drawCanvas(); };
         frameImage.onerror = () => { drawCanvas(); };
 
-        [inputName, inputID, inputLevel, zoomRange, posXRange, posYRange].forEach(input => {
+        [inputName, inputID, inputLevel, zoomRange, posXRange, posYRange, hueRange, satRange].forEach(input => {
             input.addEventListener('input', drawCanvas);
         });
 
@@ -272,10 +276,17 @@
         function drawCanvas() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+            // 1. Draw modified model.jpg background with Hue/Saturation filters applied
             if (frameImage.complete && frameImage.naturalHeight !== 0) {
+                ctx.save();
+                const hueVal = hueRange.value;
+                const satVal = satRange.value;
+                ctx.filter = `hue-rotate(${hueVal}deg) saturate(${satVal}%)`;
                 ctx.drawImage(frameImage, 0, 0, canvas.width, canvas.height);
+                ctx.restore();
             }
 
+            // 2. Draw and MASK (Clip) User Photo precisely inside the target rotated slot
             ctx.save();
             ctx.translate(photoBox.x, photoBox.y);
             ctx.rotate(photoBox.rotation);
@@ -302,15 +313,16 @@
             }
             ctx.restore();
 
+            // 3. Draw Dynamic Text Elements
             ctx.save();
             ctx.translate(500, 770); 
-            ctx.rotate(6.18);
+            ctx.rotate(6.2);
 
-            const idFontSize = 22;     
-            const nameFontSize = 30;   
+            const idFontSize = 26;     
+            const nameFontSize = 32;   
             const levelFontSize = 16;  
 
-            ctx.font = ` ${idFontSize}px sans-serif`;
+            ctx.font = `bold ${idFontSize}px sans-serif`;
             ctx.fillStyle = '#0044cc'; 
             let rawID = inputID.value.trim();
             let formattedID = rawID.startsWith('#') ? rawID : '#' + rawID;
@@ -319,9 +331,9 @@
             ctx.font = `bold ${nameFontSize}px sans-serif`;
             ctx.fillStyle = '#111111';
             let nameVal = inputName.value.trim();
-            ctx.fillText(nameVal, 0, 30);
+            ctx.fillText(nameVal, 0, 35);
 
-            let badgeY = 40; 
+            let badgeY = 46; 
 
             let levelVal = inputLevel.value.trim().toUpperCase() + ' - LEVEL';
             ctx.font = `bold ${levelFontSize}px sans-serif`;
@@ -329,7 +341,7 @@
             let textMetrics = ctx.measureText(levelVal);
             let badgePaddingX = 12;
             let badgeWidth = textMetrics.width + (badgePaddingX * 2);
-            let badgeHeight = 28;
+            let badgeHeight = 30;
             let badgeX = 0;
 
             ctx.fillStyle = '#222222';
